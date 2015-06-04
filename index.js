@@ -63,7 +63,19 @@ function getTargetBucket(bucketName, callback) {
             var tag = tags[i];
             if (tag.Key == 'TargetBucket') {
                 console.log("Tag 'TargetBucket' found with value '" + tag.Value + "'");
-                callback(tag.Value);
+
+                var buckets = tag.Value.split(";");
+
+                for (var j = 0; j < buckets.length ; j++)
+                {
+                    var bucket = buckets[i].trim();
+
+                    if (bucket.length > 0)
+                    {
+                        callback(bucket);
+                    }
+                }
+
                 return;
             }
         }

@@ -54,6 +54,8 @@ Ensure you have a source and target bucket. They do not need to reside in the sa
 
 On the source bucket, add a tag named "TargetBucket" and give it a value of the name of the target bucket.
 
+You can specify multiple buckets delimited by semicolons, e.g. `StagingBucket;DisasterRecoveryBucket;Etc`.
+
 ### Lambda Function
 
 1. Create a new Lambda function. 
