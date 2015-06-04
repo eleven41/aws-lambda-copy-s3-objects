@@ -1,6 +1,10 @@
 ﻿// Load up all dependencies
 var AWS = require('aws-sdk');
 
+var seenErrors = [];
+var completedItems = 0;
+var itemsToUpload = 0;
+
 console.log("Version 0.1.0");
 
 // This is the entry-point to the Lambda function.
@@ -33,6 +37,8 @@ exports.handler = function (event, context) {
             }, function (err, data) {
                 if (err) console.log(err, err.stack); // an error occurred
                 else console.log(data);           // successful response
+                
+                checkForCompletion(context, err)
             });
         });
     }
@@ -67,6 +73,7 @@ function getTargetBucket(bucketName, callback) {
                 console.log("Tag 'TargetBucket' found with value '" + tag.Value + "'");
 
                 var buckets = tag.Value.split(";");
+                itemsToUpload += buckets.length;
 
                 for (var j = 0; j < buckets.length ; j++) {
                     var bucketIdentifier = buckets[i].trim();
@@ -89,4 +96,26 @@ function getTargetBucket(bucketName, callback) {
         
         console.log("Tag 'TargetBucket' not found");
     });
+}
+
+function checkForCompletion(context, error) {
+    if (error) {
+        seenErrors.push(error);
+    }
+    
+    completedItems++;
+    
+    if (completedItems < itemsToUpload) {
+        return;
+    }
+    
+    if (seenErrors.length > 0)
+    {
+        context.fail("Failed to upload " + seenErrors.length  + " files of " + itemsToUpload
+            + ". Check the logs for more information.");
+    }
+    else
+    {
+        context.succeed("Successfully uploaded " + completedItems + " files.");
+    }
 }
