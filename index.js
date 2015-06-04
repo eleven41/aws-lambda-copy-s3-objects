@@ -109,13 +109,10 @@ function checkForCompletion(context, error) {
         return;
     }
     
-    if (seenErrors.length > 0)
-    {
+    if (seenErrors.length > 0) {
         context.fail("Failed to upload " + seenErrors.length  + " files of " + itemsToUpload
             + ". Check the logs for more information.");
-    }
-    else
-    {
+    } else {
         context.succeed("Successfully uploaded " + completedItems + " files.");
     }
 }
