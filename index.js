@@ -1,36 +1,47 @@
 ﻿// Load up all dependencies
 var AWS = require('aws-sdk');
 
-var seenErrors = [];
-var completedItems = 0;
-var itemsToUpload = 0;
-
 console.log("Version 0.1.0");
 
 // This is the entry-point to the Lambda function.
 exports.handler = function (event, context) {
+    var seenErrors = [];
+    var completedItems = 0;
+    var itemsToUpload = 0;
+    
+    function checkForCompletion(error) {
+        if (error) {
+            seenErrors.push(error);
+        }
         
-    // Process all records in the event.
-    for (var i = 0; i < event.Records.length; ++i) {
+        completedItems++;
         
-        // The source bucket and source key are part of the event data
-        var srcBucket = event.Records[i].s3.bucket.name;
-        var srcKey = unescape(event.Records[i].s3.object.key);
+        if (completedItems < itemsToUpload) {
+            return;
+        }
         
-        // Get the target bucket based on the source bucket.
-        // Once we have that, perform the copy.
-        getTargetBucket(srcBucket, function (region, targetBucket) {
-            console.log("Copying '" + srcKey + "' from '" + srcBucket + "' to '" + targetBucket + "'");
-
-            var dstBucket = targetBucket;
-            var dstKey = srcKey;
+        if (seenErrors.length > 0) {
+            context.fail("Failed to upload " + seenErrors.length  + " files of " + itemsToUpload
+                + ". Check the logs for more information.");
+        } else {
+            context.succeed("Successfully uploaded " + completedItems + " files.");
+        }
+    }
+    
+    function processUploads(uploads) {
+        itemsToUpload += uploads.length;
+        
+        for (var j = 0; j < uploads.length; j++) {
+            var targetBucket = uploads[j].bucket;
+            var region = uploads[j].region;
             
-            var s3 = region == null ? new AWS.S3() : new AWS.S3({region: region});
-
-            // Copy the object from the source bucket
+            console.log("Copying '" + srcKey + "' from '" + srcBucket + "' to '" + targetBucket + "' in " + region);
+            
+            var s3 = region === null ? new AWS.S3() : new AWS.S3({region: region});
+            
             s3.copyObject({
-                Bucket: dstBucket,
-                Key: dstKey,
+                Bucket: targetBucket,
+                Key: srcKey,
                 
                 CopySource: escape(srcBucket + '/' + srcKey),
                 MetadataDirective: 'COPY'
@@ -38,9 +49,21 @@ exports.handler = function (event, context) {
                 if (err) console.log(err, err.stack); // an error occurred
                 else console.log(data);           // successful response
                 
-                checkForCompletion(context, err)
-            });
-        });
+                checkForCompletion(err)
+            });    
+        }
+    }
+    
+    // Process all records in the event.
+    for (var i = 0; i < event.Records.length; ++i) {
+        
+        // The source bucket and source key are part of the event data
+        var srcBucket = event.Records[i].s3.bucket.name;
+        var srcKey = unescape(event.Records[i].s3.object.key);
+        
+        // Get a list of  target buckets based on the source bucket.
+        // Once we have that, perform the copy operations.
+        getTargetBucket(srcBucket, processUploads);
     }
 };
 
@@ -72,11 +95,11 @@ function getTargetBucket(bucketName, callback) {
             if (tag.Key == 'TargetBucket') {
                 console.log("Tag 'TargetBucket' found with value '" + tag.Value + "'");
 
-                var buckets = tag.Value.split(";");
-                itemsToUpload += buckets.length;
+                var uploads = [];
+                var buckets = tag.Value.split(" ");
 
                 for (var j = 0; j < buckets.length ; j++) {
-                    var bucketIdentifier = buckets[i].trim();
+                    var bucketIdentifier = buckets[j].trim();
 
                     if (bucketIdentifier.length == 0) {
                         continue;
@@ -87,32 +110,14 @@ function getTargetBucket(bucketName, callback) {
                     var bucket = identifierParts[0].trim();
                     var region = identifierParts.length > 1 ? identifierParts[1].trim() : null;
 
-                    callback(region, bucket);
+                    uploads.push({bucket: bucket, region: region});
                 }
-
+                
+                callback(uploads);
                 return;
             }
         }
         
         console.log("Tag 'TargetBucket' not found");
     });
-}
-
-function checkForCompletion(context, error) {
-    if (error) {
-        seenErrors.push(error);
-    }
-    
-    completedItems++;
-    
-    if (completedItems < itemsToUpload) {
-        return;
-    }
-    
-    if (seenErrors.length > 0) {
-        context.fail("Failed to upload " + seenErrors.length  + " files of " + itemsToUpload
-            + ". Check the logs for more information.");
-    } else {
-        context.succeed("Successfully uploaded " + completedItems + " files.");
-    }
 }

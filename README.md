@@ -54,10 +54,10 @@ Ensure you have a source and target bucket. They do not need to reside in the sa
 
 On the source bucket, add a tag named "TargetBucket" and give it a value of the name of the target bucket.
 
-You can specify multiple buckets delimited by semicolons, e.g. `StagingBucket;DisasterRecoveryBucket;Etc`.
+You can specify multiple buckets delimited by spaces, e.g. `StagingBucket DisasterRecoveryBucket Etc`.
 
 If the bucket is in another region, you will need to specify the region delimited with an `@` token,
-e.g. `StagingBucket@eu-central-1;DisasterRecoveryBucket@eu-west-1;BucketInSameRegion;Etc`.
+e.g. `StagingBucket@eu-central-1 DisasterRecoveryBucket@eu-west-1 BucketInSameRegion Etc`.
 
 We don't use the API to retrieve the region of the bucket to avoid burning API usages
 ($0.004 x 1000 requests under heavy traffic can mount up faster than you'd imagine).
