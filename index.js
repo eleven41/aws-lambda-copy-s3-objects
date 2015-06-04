@@ -3,9 +3,6 @@ var AWS = require('aws-sdk');
 
 console.log("Version 0.1.0");
 
-// get reference to S3 client 
-var s3 = new AWS.S3();
-
 // This is the entry-point to the Lambda function.
 exports.handler = function (event, context) {
         
@@ -18,12 +15,14 @@ exports.handler = function (event, context) {
         
         // Get the target bucket based on the source bucket.
         // Once we have that, perform the copy.
-        getTargetBucket(srcBucket, function (targetBucket) {
+        getTargetBucket(srcBucket, function (region, targetBucket) {
             console.log("Copying '" + srcKey + "' from '" + srcBucket + "' to '" + targetBucket + "'");
 
             var dstBucket = targetBucket;
             var dstKey = srcKey;
             
+            var s3 = region == null ? new AWS.S3() : new AWS.S3({region: region});
+
             // Copy the object from the source bucket
             s3.copyObject({
                 Bucket: dstBucket,
@@ -47,6 +46,9 @@ exports.handler = function (event, context) {
 // the tag value as the single parameter.
 function getTargetBucket(bucketName, callback) {
     console.log("Getting tags for bucket '" + bucketName + "'");
+
+    var s3 = new AWS.S3();
+
     s3.getBucketTagging({
         Bucket: bucketName
     }, function (err, data) {
@@ -66,14 +68,19 @@ function getTargetBucket(bucketName, callback) {
 
                 var buckets = tag.Value.split(";");
 
-                for (var j = 0; j < buckets.length ; j++)
-                {
-                    var bucket = buckets[i].trim();
+                for (var j = 0; j < buckets.length ; j++) {
+                    var bucketIdentifier = buckets[i].trim();
 
-                    if (bucket.length > 0)
-                    {
-                        callback(bucket);
+                    if (bucketIdentifier.length == 0) {
+                        continue;
                     }
+
+                    var identifierParts = bucketIdentifier.split("@");
+
+                    var bucket = identifierParts[0].trim();
+                    var region = identifierParts.length > 1 ? identifierParts[1].trim() : null;
+
+                    callback(region, bucket);
                 }
 
                 return;

@@ -56,6 +56,17 @@ On the source bucket, add a tag named "TargetBucket" and give it a value of the 
 
 You can specify multiple buckets delimited by semicolons, e.g. `StagingBucket;DisasterRecoveryBucket;Etc`.
 
+If the bucket is in another region, you will need to specify the region delimited with an `@` token,
+e.g. `StagingBucket@eu-central-1;DisasterRecoveryBucket@eu-west-1;BucketInSameRegion;Etc`.
+
+We don't use the API to retrieve the region of the bucket to avoid burning API usages
+($0.004 x 1000 requests under heavy traffic can mount up faster than you'd imagine).
+
+If you don't specify the region for a bucket that is outside the function's region,
+you will see an error that looks like this:
+
+> [PermanentRedirect: The bucket you are attempting to access must be addressed using the specified endpoint. Please send all future requests to this endpoint.
+
 ### Lambda Function
 
 1. Create a new Lambda function. 
