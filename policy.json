@@ -1,0 +1,37 @@
+﻿{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "Stmt1430872797000",
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetBucketTagging",
+                "s3:GetObject",
+                "s3:PutObject"
+            ],
+            "Resource": [
+                "*"
+            ]
+        },
+        {
+            "Sid": "Stmt1430872844000",
+            "Effect": "Allow",
+            "Action": [
+                "cloudwatch:*"
+            ],
+            "Resource": [
+                "*"
+            ]
+        },
+        {
+            "Sid": "Stmt1430872852000",
+            "Effect": "Allow",
+            "Action": [
+                "logs:*"
+            ],
+            "Resource": [
+                "*"
+            ]
+        }
+    ]
+}
