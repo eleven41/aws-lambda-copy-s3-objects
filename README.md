@@ -53,13 +53,17 @@ Create an IAM role with the following policy:
 1. Ensure you have a source and target bucket. They do not need to reside in the same region.
 2. Configure your S3 buckets (see below)
 
+### Using the Release Packages
+
+Release packages can be found on the [Releases](https://github.com/eleven41/aws-lambda-copy-s3-objects/releases) page.
+
 ### Building the Lambda Package
 
 1. Clone this repo
 
 ```
 git clone git@github.com:eleven41/aws-lambda-copy-s3-objects.git
-cd aws-copy-encrypt-s3-objects
+cd aws-lambda-copy-s3-objects
 ```
 
 2. Install requirements
