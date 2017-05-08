@@ -46,6 +46,7 @@ function processRecord(record, callback) {
         
     // The source bucket and source key are part of the event data
     var srcBucket = record.s3.bucket.name;
+    var eventName = record.eventName;
     var srcKey = decodeURIComponent(record.s3.object.key.replace(/\+/g, " "));
         
     // Get the target bucket(s) based on the source bucket.
@@ -68,24 +69,45 @@ function processRecord(record, callback) {
             var targetKey = srcKey;
             
             console.log("Copying '" + srcKey + "' from '" + srcBucket + "' to '" + targetBucketName + "'");
+            console.log(record);
             
+            console.log(eventName); 
+            if (eventName == "ObjectRemoved:DeleteMarkerCreated") {
+                console.log("DELETE MARKER CREATED")
+                var s3 = createS3(regionName);
+                s3.deleteObject({
+                    Bucket: targetBucket,
+                    Key: targetKey
+                },
+                function (err, data) {
+                    if (err) {
+                        console.log("Error deleting '" + srcKey + "' from '" + srcBucket + "' to '" + targetBucketName + "'");
+                        console.log(err, err.stack); // an error occurred
+                        callback("Error deleting '" + srcKey + "' from '" + srcBucket + "' to '" + targetBucketName + "'");
+                    } else {
+                        callback();
+                    }
+                });
+            }
             // Copy the object from the source bucket
-            var s3 = createS3(regionName);
-            s3.copyObject({
-                Bucket: targetBucket,
-                Key: targetKey,
-                
-                CopySource: encodeURIComponent(srcBucket + '/' + srcKey),
-                MetadataDirective: 'COPY'
-            }, function (err, data) {
-                if (err) {
-                    console.log("Error copying '" + srcKey + "' from '" + srcBucket + "' to '" + targetBucketName + "'");
-                    console.log(err, err.stack); // an error occurred
-                    callback("Error copying '" + srcKey + "' from '" + srcBucket + "' to '" + targetBucketName + "'");
-                } else {
-                    callback();
-                }
-            });
+            if (eventName == "ObjectCreated:Put") {
+                var s3 = createS3(regionName);
+                s3.copyObject({
+                    Bucket: targetBucket,
+                    Key: targetKey,
+                    
+                    CopySource: encodeURIComponent(srcBucket + '/' + srcKey),
+                    MetadataDirective: 'COPY'
+                }, function (err, data) {
+                    if (err) {
+                        console.log("Error copying '" + srcKey + "' from '" + srcBucket + "' to '" + targetBucketName + "'");
+                        console.log(err, err.stack); // an error occurred
+                        callback("Error copying '" + srcKey + "' from '" + srcBucket + "' to '" + targetBucketName + "'");
+                    } else {
+                        callback();
+                    }
+                });
+            };
         }, function (err) {
             if (err) {
                 callback(err);

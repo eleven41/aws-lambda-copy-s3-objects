@@ -1,6 +1,6 @@
 # An AWS Lambda Based Function to Copy S3 Objects
 
-With this AWS Lambda function, you can copy objects from a source S3 bucket to one or more target S3 buckets as they are added to the source bucket.
+With this AWS Lambda function, you can copy objects from a source S3 bucket to one or more target S3 buckets as they are added or removed to/from the source bucket.
 
 ## Configuration
 
@@ -18,7 +18,8 @@ Create an IAM role with the following policy:
             "Action": [
                 "s3:GetBucketTagging",
                 "s3:GetObject",
-                "s3:PutObject"
+                "s3:PutObject",
+                "s3:DeleteObject"
             ],
             "Resource": [
                 "*"
@@ -83,7 +84,11 @@ npm install aws-sdk
  * Event Source Type: S3
  * Bucket: your source bucket
  * Event Type: Object Created
-4. Set your Lambda function to execute using the IAM role you created above.
+4. Add another event source to your Lambda function:
+ * Event Source Type: S3
+ * Bucket: your source bucket
+ * Event Type: Objects Removed (All)
+5. Set your Lambda function to execute using the IAM role you created above.
 
 ### Configuration
 
